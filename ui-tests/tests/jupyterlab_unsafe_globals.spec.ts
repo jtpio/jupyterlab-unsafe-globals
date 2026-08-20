@@ -1,3 +1,6 @@
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+
 import { expect, IJupyterLabPageFixture, test } from '@jupyterlab/galata';
 
 const NOTEBOOK = 'globals_test.ipynb';

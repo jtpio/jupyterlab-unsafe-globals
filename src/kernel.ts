@@ -1,10 +1,13 @@
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+
 import { ISessionContext } from '@jupyterlab/apputils';
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
 /**
  * Callbacks accepted by the classic `kernel.execute`, in the exact classic
  * shape. Every callback receives the whole raw Jupyter message, except
- * payload handlers which receive (payload, msg).
+ * payload handlers which receive `(payload, msg)`.
  */
 export interface IClassicExecuteCallbacks {
   shell?: {
@@ -30,24 +33,17 @@ export interface IClassicExecuteOptions {
   allow_stdin?: boolean;
 }
 
-const OUTPUT_MSG_TYPES = [
-  'stream',
-  'display_data',
-  'update_display_data',
-  'execute_result',
-  'error'
-];
-
-const kernelShims = new WeakMap<ISessionContext, KernelShim>();
-
 /**
  * Get the cached kernel shim for a session context.
+ *
+ * @param sessionContext - The session context of a notebook panel
+ * @returns The kernel shim bound to the session context
  */
 export function getKernelShim(sessionContext: ISessionContext): KernelShim {
-  let shim = kernelShims.get(sessionContext);
+  let shim = Private.kernelShims.get(sessionContext);
   if (!shim) {
     shim = new KernelShim(sessionContext);
-    kernelShims.set(sessionContext, shim);
+    Private.kernelShims.set(sessionContext, shim);
   }
   return shim;
 }
@@ -59,25 +55,40 @@ export function getKernelShim(sessionContext: ISessionContext): KernelShim {
  * time, so a held reference stays valid across kernel restarts and swaps.
  */
 export class KernelShim {
+  /**
+   * Construct a new kernel shim.
+   *
+   * @param sessionContext - The session context to resolve the kernel from
+   */
   constructor(sessionContext: ISessionContext) {
     this._sessionContext = sessionContext;
   }
 
+  /**
+   * The kernel id, or an empty string when there is no kernel.
+   */
   get id(): string {
     return this._kernel?.id ?? '';
   }
 
+  /**
+   * The kernel name, or an empty string when there is no kernel.
+   */
   get name(): string {
     return this._kernel?.name ?? '';
   }
 
   /**
-   * Execute code on the kernel, classic style: returns the msg_id string
-   * synchronously and reports results through the callbacks.
+   * Execute code on the kernel, classic style.
    *
-   * Defaults match classic (silent: true, store_history: false,
-   * stop_on_error left to the kernel default of true), which differ from
-   * the JupyterLab `requestExecute` defaults.
+   * Defaults match classic (`silent: true`, `store_history: false`,
+   * `stop_on_error: true`), which differ from the JupyterLab
+   * `requestExecute` defaults.
+   *
+   * @param code - The code to execute
+   * @param callbacks - The classic callbacks to report results through
+   * @param options - Overrides for the execute request content
+   * @returns The `msg_id` of the execute request, synchronously
    */
   execute(
     code: string,
@@ -104,7 +115,7 @@ export class KernelShim {
         callbacks.iopub?.clear_output?.(msg);
       } else if (msgType === 'status') {
         callbacks.iopub?.status?.(msg);
-      } else if (OUTPUT_MSG_TYPES.includes(msgType)) {
+      } else if (Private.OUTPUT_MSG_TYPES.includes(msgType)) {
         callbacks.iopub?.output?.(msg);
       }
     };
@@ -125,7 +136,9 @@ export class KernelShim {
   }
 
   /**
-   * Reply to the most recent input_request, classic style.
+   * Reply to the most recent `input_request`, classic style.
+   *
+   * @param input - The value to send back to the kernel
    */
   send_input_reply(input: string): void {
     const request = this._lastInputRequest;
@@ -139,6 +152,12 @@ export class KernelShim {
     kernel.sendInputReply({ status: 'ok', value: input }, request.header);
   }
 
+  /**
+   * Interrupt the kernel.
+   *
+   * @param success - Callback invoked when the interrupt succeeds
+   * @param error - Callback invoked when the interrupt fails
+   */
   interrupt(success?: () => void, error?: (err: any) => void): void {
     this._kernel
       ?.interrupt()
@@ -146,6 +165,12 @@ export class KernelShim {
       .catch(err => (error ? error(err) : console.error(err)));
   }
 
+  /**
+   * Restart the kernel.
+   *
+   * @param success - Callback invoked when the restart succeeds
+   * @param error - Callback invoked when the restart fails
+   */
   restart(success?: () => void, error?: (err: any) => void): void {
     this._kernel
       ?.restart()
@@ -153,14 +178,23 @@ export class KernelShim {
       .catch(err => (error ? error(err) : console.error(err)));
   }
 
+  /**
+   * Reconnect the kernel websocket connection.
+   */
   reconnect(): void {
     void this._kernel?.reconnect();
   }
 
+  /**
+   * Whether the kernel connection is established.
+   */
   is_connected(): boolean {
     return this._kernel?.connectionStatus === 'connected';
   }
 
+  /**
+   * Whether the kernel connection is permanently down.
+   */
   is_fully_disconnected(): boolean {
     return (
       (this._kernel?.connectionStatus ?? 'disconnected') === 'disconnected'
@@ -173,4 +207,25 @@ export class KernelShim {
 
   private _sessionContext: ISessionContext;
   private _lastInputRequest: KernelMessage.IInputRequestMsg | null = null;
+}
+
+/**
+ * The namespace for module private data.
+ */
+namespace Private {
+  /**
+   * The iopub message types routed to the classic `iopub.output` callback.
+   */
+  export const OUTPUT_MSG_TYPES = [
+    'stream',
+    'display_data',
+    'update_display_data',
+    'execute_result',
+    'error'
+  ];
+
+  /**
+   * The kernel shim cache, one per session context.
+   */
+  export const kernelShims = new WeakMap<ISessionContext, KernelShim>();
 }

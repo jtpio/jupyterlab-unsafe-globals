@@ -1,3 +1,6 @@
+// Copyright (c) Jupyter Development Team.
+// Distributed under the terms of the Modified BSD License.
+
 import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
@@ -28,7 +31,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     }
     const jupyter = createClassicNamespace(app, tracker);
     win.Jupyter = jupyter;
-    // The classic notebook exposed IPython as a plain alias of Jupyter.
+    // the classic notebook exposed IPython as a plain alias of Jupyter
     win.IPython = jupyter;
     console.log(
       'jupyterlab-unsafe-globals: window.Jupyter and window.IPython are now available'
