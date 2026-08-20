@@ -8,6 +8,8 @@ The classic Notebook (< 7.0) exposed a `Jupyter` object (and its `IPython` alias
 
 This extension restores a subset of those globals as an opt-in compatibility shim, implemented on top of the modern JupyterLab APIs. It is a transition aid, not a replacement for a proper port to the [JupyterLab extension APIs](https://jupyterlab.readthedocs.io/en/latest/extension/extension_dev.html).
 
+![screenshot showing some of the IPython and Jupyter globals used in the dev tools](./screenshot.png)
+
 ## ⚠️ Warning: this is unsafe by design
 
 Restoring these globals restores the security posture of the classic Notebook: any JavaScript running in the page, including code injected from a kernel with `IPython.display.Javascript`, can read, modify, execute, and save the current notebook, and reach the whole application through `Jupyter.app`. Install it only if you understand and accept this. Do not install it by default for other users.

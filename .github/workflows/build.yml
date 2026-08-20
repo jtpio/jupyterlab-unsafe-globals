@@ -109,7 +109,7 @@ jobs:
     - name: Install the extension
       run: |
         set -eux
-        python -m pip install "jupyterlab>=4.0.0,<5" jupyterlab_unsafe_globals*.whl
+        python -m pip install "jupyterlab>=4.0.0,<5" "notebook>=7,<8" jupyterlab_unsafe_globals*.whl
 
     - name: Install dependencies
       working-directory: ui-tests

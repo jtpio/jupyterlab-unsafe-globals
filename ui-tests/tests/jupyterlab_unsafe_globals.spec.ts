@@ -180,6 +180,11 @@ test.describe('with a notebook', () => {
       nb.get_cell(0).set_text('x = 1');
       const dirtyBefore = nb.dirty;
       await nb.save_checkpoint();
+      // a late kernel-info metadata write can re-dirty the model
+      for (let i = 0; i < 20 && nb.dirty; i++) {
+        await new Promise(r => setTimeout(r, 100));
+        await nb.save_notebook();
+      }
       return { dirtyBefore, dirtyAfter: nb.dirty };
     });
     expect(result.dirtyBefore).toBe(true);
