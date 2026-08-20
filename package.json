@@ -1,6 +1,6 @@
 {
     "name": "jupyterlab-unsafe-globals",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "private": true,
     "description": "Expose the classic Notebook globals (Jupyter, IPython) on the window, for JupyterLab and Jupyter Notebook",
     "keywords": [
