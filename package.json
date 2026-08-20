@@ -56,7 +56,12 @@
         "watch:labextension": "jupyter-builder watch ."
     },
     "dependencies": {
-        "@jupyterlab/application": "^4.0.0"
+        "@jupyterlab/application": "^4.0.0",
+        "@jupyterlab/apputils": "^4.7.3",
+        "@jupyterlab/cells": "^4.6.3",
+        "@jupyterlab/coreutils": "^6.6.3",
+        "@jupyterlab/notebook": "^4.6.3",
+        "@jupyterlab/services": "^7.6.3"
     },
     "devDependencies": {
         "@eslint/js": "^9.0.0",
