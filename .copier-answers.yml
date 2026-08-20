@@ -1,0 +1,17 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.6.4
+_src_path: https://github.com/jupyterlab/extension-template
+advanced: false
+author_email: jeremy.tuloup@gmail.com
+author_name: Jeremy Tuloup
+has_ai_rules: false
+has_binder: false
+has_settings: false
+kind: frontend
+labextension_name: jupyterlab-unsafe-globals
+project_short_description: Expose the classic Notebook globals (Jupyter, IPython)
+    on the window, for JupyterLab and Jupyter Notebook
+python_name: jupyterlab_unsafe_globals
+repository: https://github.com/jtpio/jupyterlab-unsafe-globals
+test: true
+
