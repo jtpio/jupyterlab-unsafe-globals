@@ -6193,6 +6193,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"font-awesome@npm:^4.7.0":
+  version: 4.7.0
+  resolution: "font-awesome@npm:4.7.0"
+  checksum: fa223f6e3b27e97d2d09cdbf0c1363e2ad18d2a685fc045f54e86394db59f7c113482a819de3b6489f42a630a8ec5911b8e65718e45f7cace1c0a1b05d7fce08
+  languageName: node
+  linkType: hard
+
 "foreground-child@npm:^3.1.0":
   version: 3.3.1
   resolution: "foreground-child@npm:3.3.1"
@@ -7601,10 +7608,14 @@ __metadata:
     "@jupyterlab/application": ^4.0.0
     "@jupyterlab/apputils": ^4.7.3
     "@jupyterlab/cells": ^4.6.3
+    "@jupyterlab/codeeditor": ^4.6.3
     "@jupyterlab/coreutils": ^6.6.3
     "@jupyterlab/notebook": ^4.6.3
+    "@jupyterlab/outputarea": ^4.6.3
     "@jupyterlab/services": ^7.6.3
     "@jupyterlab/testutils": ^4.0.0
+    "@lumino/disposable": ^2.1.6
+    "@lumino/widgets": ^2.9.0
     "@types/jest": ^29.2.0
     "@types/json-schema": ^7.0.11
     "@types/react": ^18.0.26
@@ -7612,6 +7623,7 @@ __metadata:
     eslint: ^9.0.0
     eslint-config-prettier: ^9.0.0
     eslint-plugin-prettier: ^5.0.0
+    font-awesome: ^4.7.0
     globals: ^15.0.0
     jest: ^29.2.0
     npm-run-all2: ^7.0.1

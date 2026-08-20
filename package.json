@@ -59,9 +59,14 @@
         "@jupyterlab/application": "^4.0.0",
         "@jupyterlab/apputils": "^4.7.3",
         "@jupyterlab/cells": "^4.6.3",
+        "@jupyterlab/codeeditor": "^4.6.3",
         "@jupyterlab/coreutils": "^6.6.3",
         "@jupyterlab/notebook": "^4.6.3",
-        "@jupyterlab/services": "^7.6.3"
+        "@jupyterlab/outputarea": "^4.6.3",
+        "@jupyterlab/services": "^7.6.3",
+        "@lumino/disposable": "^2.1.6",
+        "@lumino/widgets": "^2.9.0",
+        "font-awesome": "^4.7.0"
     },
     "devDependencies": {
         "@eslint/js": "^9.0.0",

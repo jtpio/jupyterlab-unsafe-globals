@@ -4,6 +4,9 @@
 import { ISessionContext } from '@jupyterlab/apputils';
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
+import { CommManagerShim, getCommManagerShim } from './comm';
+import { EventsShim, getEventsShim } from './events';
+
 /**
  * Callbacks accepted by the classic `kernel.execute`, in the exact classic
  * shape. Every callback receives the whole raw Jupyter message, except
@@ -31,6 +34,43 @@ export interface IClassicExecuteOptions {
   stop_on_error?: boolean;
   user_expressions?: any;
   allow_stdin?: boolean;
+}
+
+/**
+ * Route the messages of a kernel future to the classic callbacks.
+ *
+ * @param future - The kernel future to wire
+ * @param callbacks - The classic callbacks
+ * @param onInputRequest - Optional extra hook for `input_request` messages
+ */
+export function wireClassicCallbacks(
+  future: Kernel.IFuture<any, any>,
+  callbacks: IClassicExecuteCallbacks,
+  onInputRequest?: (msg: KernelMessage.IInputRequestMsg) => void
+): void {
+  future.onIOPub = msg => {
+    const msgType = msg.header.msg_type;
+    if (msgType === 'clear_output') {
+      callbacks.iopub?.clear_output?.(msg);
+    } else if (msgType === 'status') {
+      callbacks.iopub?.status?.(msg);
+    } else if (Private.OUTPUT_MSG_TYPES.includes(msgType)) {
+      callbacks.iopub?.output?.(msg);
+    }
+  };
+  future.onReply = msg => {
+    callbacks.shell?.reply?.(msg);
+    const payloads = (msg.content as any).payload ?? [];
+    for (const payload of payloads) {
+      callbacks.shell?.payload?.[payload.source]?.(payload, msg);
+    }
+  };
+  future.onStdin = msg => {
+    if (KernelMessage.isInputRequestMsg(msg)) {
+      onInputRequest?.(msg);
+      callbacks.input?.(msg);
+    }
+  };
 }
 
 /**
@@ -62,6 +102,10 @@ export class KernelShim {
    */
   constructor(sessionContext: ISessionContext) {
     this._sessionContext = sessionContext;
+    this._primeInfoReply();
+    (sessionContext as any).kernelChanged?.connect?.(() => {
+      this._primeInfoReply();
+    });
   }
 
   /**
@@ -76,6 +120,49 @@ export class KernelShim {
    */
   get name(): string {
     return this._kernel?.name ?? '';
+  }
+
+  /**
+   * The kernel websocket URL.
+   */
+  get ws_url(): string {
+    return this._kernel?.serverSettings?.wsUrl ?? '';
+  }
+
+  /**
+   * The kernel connection username.
+   */
+  get username(): string {
+    return this._kernel?.username ?? '';
+  }
+
+  /**
+   * The per-connection client id, like the classic session id.
+   */
+  get session_id(): string {
+    return this._kernel?.clientId ?? '';
+  }
+
+  /**
+   * The classic events object.
+   */
+  get events(): EventsShim {
+    return getEventsShim();
+  }
+
+  /**
+   * The cached `kernel_info` reply content, classic style. Empty until
+   * the kernel info arrives; refreshed on kernel changes.
+   */
+  get info_reply(): any {
+    return this._infoReply;
+  }
+
+  /**
+   * The classic comm manager.
+   */
+  get comm_manager(): CommManagerShim {
+    return getCommManagerShim(this._sessionContext);
   }
 
   /**
@@ -95,10 +182,7 @@ export class KernelShim {
     callbacks: IClassicExecuteCallbacks = {},
     options: IClassicExecuteOptions = {}
   ): string {
-    const kernel = this._kernel;
-    if (!kernel) {
-      throw new Error('kernel is not connected and cannot execute');
-    }
+    const kernel = this._requireKernel();
     const content: KernelMessage.IExecuteRequestMsg['content'] = {
       code,
       silent: true,
@@ -109,30 +193,105 @@ export class KernelShim {
       ...options
     };
     const future = kernel.requestExecute(content);
-    future.onIOPub = msg => {
-      const msgType = msg.header.msg_type;
-      if (msgType === 'clear_output') {
-        callbacks.iopub?.clear_output?.(msg);
-      } else if (msgType === 'status') {
-        callbacks.iopub?.status?.(msg);
-      } else if (Private.OUTPUT_MSG_TYPES.includes(msgType)) {
-        callbacks.iopub?.output?.(msg);
-      }
-    };
-    future.onReply = msg => {
-      callbacks.shell?.reply?.(msg);
-      const payloads = (msg.content as any).payload ?? [];
-      for (const payload of payloads) {
-        callbacks.shell?.payload?.[payload.source]?.(payload, msg);
-      }
-    };
-    future.onStdin = msg => {
-      if (KernelMessage.isInputRequestMsg(msg)) {
-        this._lastInputRequest = msg;
-        callbacks.input?.(msg);
-      }
-    };
+    wireClassicCallbacks(future, callbacks, msg => {
+      this._lastInputRequest = msg;
+    });
     return future.msg.header.msg_id;
+  }
+
+  /**
+   * Send a raw shell message, classic style.
+   *
+   * @param msg_type - The message type, e.g. `'complete_request'`
+   * @param content - The message content
+   * @param callbacks - The classic callbacks to report results through
+   * @param metadata - Optional message metadata
+   * @param buffers - Optional binary buffers
+   * @returns The `msg_id` of the request, synchronously
+   */
+  send_shell_message(
+    msg_type: string,
+    content: any,
+    callbacks: IClassicExecuteCallbacks = {},
+    metadata?: any,
+    buffers?: any[]
+  ): string {
+    const kernel = this._requireKernel();
+    const msg = KernelMessage.createMessage({
+      msgType: msg_type as any,
+      channel: 'shell',
+      username: kernel.username,
+      session: kernel.clientId,
+      content,
+      metadata,
+      buffers
+    });
+    const future = kernel.sendShellMessage(msg, true);
+    wireClassicCallbacks(future, callbacks);
+    return msg.header.msg_id;
+  }
+
+  /**
+   * Request code completions; the callback receives the full
+   * `complete_reply` message.
+   */
+  complete(
+    code: string,
+    cursor_pos: number,
+    callback?: (msg: any) => void
+  ): string {
+    return this.send_shell_message(
+      'complete_request',
+      { code, cursor_pos },
+      { shell: { reply: callback } }
+    );
+  }
+
+  /**
+   * Request code introspection; the callback receives the full
+   * `inspect_reply` message.
+   */
+  inspect(
+    code: string,
+    cursor_pos: number,
+    callback?: (msg: any) => void
+  ): string {
+    return this.send_shell_message(
+      'inspect_request',
+      { code, cursor_pos, detail_level: 0 },
+      { shell: { reply: callback } }
+    );
+  }
+
+  /**
+   * Request the kernel info; the callback receives the full
+   * `kernel_info_reply` message.
+   */
+  kernel_info(callback?: (msg: any) => void): string {
+    return this.send_shell_message(
+      'kernel_info_request',
+      {},
+      {
+        shell: {
+          reply: (msg: any) => {
+            this._infoReply = msg.content;
+            callback?.(msg);
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * Request the open comms; the callback receives the full
+   * `comm_info_reply` message.
+   */
+  comm_info(target_name?: string, callback?: (msg: any) => void): string {
+    return this.send_shell_message(
+      'comm_info_request',
+      target_name ? { target_name } : {},
+      { shell: { reply: callback } }
+    );
   }
 
   /**
@@ -205,8 +364,23 @@ export class KernelShim {
     return this._sessionContext.session?.kernel ?? null;
   }
 
+  private _requireKernel(): Kernel.IKernelConnection {
+    const kernel = this._kernel;
+    if (!kernel) {
+      throw new Error('kernel is not connected and cannot execute');
+    }
+    return kernel;
+  }
+
+  private _primeInfoReply(): void {
+    void this._kernel?.info?.then(info => {
+      this._infoReply = info;
+    });
+  }
+
   private _sessionContext: ISessionContext;
   private _lastInputRequest: KernelMessage.IInputRequestMsg | null = null;
+  private _infoReply: any = {};
 }
 
 /**

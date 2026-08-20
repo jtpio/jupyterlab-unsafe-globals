@@ -3,6 +3,8 @@
 
 import { EventsShim } from '../events';
 import { KernelShim } from '../kernel';
+import { translateShortcut } from '../keyboard';
+import { convertOutputMsg } from '../outputarea';
 
 describe('EventsShim', () => {
   let events: EventsShim;
@@ -55,9 +57,39 @@ describe('EventsShim', () => {
   });
 
   it('should warn once for events that are never emitted', () => {
-    events.on('execute.CodeCell', jest.fn());
-    events.on('execute.CodeCell', jest.fn());
+    events.on('resize-header.Page', jest.fn());
+    events.on('resize-header.Page', jest.fn());
     expect(console.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not warn for extension-internal event names', () => {
+    events.on('varRefresh', jest.fn());
+    events.on('toggle-all-headers', jest.fn());
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('should spread array payloads over the handler arguments', () => {
+    const handler = jest.fn();
+    events.on('output_appended.OutputArea', handler);
+    events.trigger('output_appended.OutputArea', ['text/plain', '1', {}, null]);
+    expect(handler).toHaveBeenCalledWith(
+      { type: 'output_appended.OutputArea' },
+      'text/plain',
+      '1',
+      {},
+      null
+    );
+  });
+
+  it('should split whitespace separated event names', () => {
+    const handler = jest.fn();
+    events.on('kernel_idle.Kernel kernel_busy.Kernel', handler);
+    events.trigger('kernel_idle.Kernel');
+    events.trigger('kernel_busy.Kernel');
+    expect(handler).toHaveBeenCalledTimes(2);
+    events.off('kernel_idle.Kernel kernel_busy.Kernel', handler);
+    events.trigger('kernel_idle.Kernel');
+    expect(handler).toHaveBeenCalledTimes(2);
   });
 
   it('should keep calling handlers when one throws', () => {
@@ -206,5 +238,50 @@ describe('KernelShim', () => {
   it('should report the connection state', () => {
     expect(shim.is_connected()).toBe(true);
     expect(shim.is_fully_disconnected()).toBe(false);
+  });
+});
+
+describe('translateShortcut', () => {
+  it('should translate modifiers and keys', () => {
+    expect(translateShortcut('ctrl-shift-h')).toEqual(['Ctrl Shift H']);
+    expect(translateShortcut('cmdtrl-s')).toEqual(['Accel S']);
+    expect(translateShortcut('alt-enter')).toEqual(['Alt Enter']);
+    expect(translateShortcut('esc')).toEqual(['Escape']);
+    expect(translateShortcut('shift-up')).toEqual(['Shift ArrowUp']);
+    expect(translateShortcut('f5')).toEqual(['F5']);
+  });
+
+  it('should translate chords', () => {
+    expect(translateShortcut('d,d')).toEqual(['D', 'D']);
+    expect(translateShortcut('ctrl-x,ctrl-c')).toEqual(['Ctrl X', 'Ctrl C']);
+  });
+});
+
+describe('convertOutputMsg', () => {
+  it('should convert the classic output message types', () => {
+    expect(
+      convertOutputMsg({
+        header: { msg_type: 'stream' },
+        content: { name: 'stdout', text: 'hi\n' }
+      })
+    ).toEqual({ output_type: 'stream', name: 'stdout', text: 'hi\n' });
+    expect(
+      convertOutputMsg({
+        header: { msg_type: 'execute_result' },
+        content: {
+          execution_count: 2,
+          data: { 'text/plain': '4' },
+          metadata: {}
+        }
+      })
+    ).toEqual({
+      output_type: 'execute_result',
+      execution_count: 2,
+      data: { 'text/plain': '4' },
+      metadata: {}
+    });
+    expect(
+      convertOutputMsg({ header: { msg_type: 'status' }, content: {} })
+    ).toBeNull();
   });
 });

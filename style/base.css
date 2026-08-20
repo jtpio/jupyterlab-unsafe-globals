@@ -3,3 +3,32 @@
 
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+
+/* FontAwesome 4, so the classic 'fa fa-*' toolbar icons render */
+@import url('font-awesome/css/font-awesome.css');
+
+/* Classic Bootstrap-style toolbar button groups */
+.jp-Toolbar .btn-group {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  margin: 2px;
+}
+
+.jp-Toolbar .btn {
+  background: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color2);
+  border-radius: 2px;
+  color: var(--jp-ui-font-color1);
+  cursor: pointer;
+  font-size: var(--jp-ui-font-size1);
+  padding: 0 6px;
+}
+
+.jp-Toolbar .btn:hover {
+  background: var(--jp-layout-color2);
+}
+
+.jp-Toolbar .btn.active {
+  background: var(--jp-layout-color3);
+}

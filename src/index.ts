@@ -27,6 +27,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
       console.warn(
         'jupyterlab-unsafe-globals: window.Jupyter or window.IPython is already defined, not overriding it'
       );
+      // keep the classic alias invariant when only one name is taken
+      if (win.Jupyter === undefined) {
+        win.Jupyter = win.IPython;
+      } else if (win.IPython === undefined) {
+        win.IPython = win.Jupyter;
+      }
       return;
     }
     const jupyter = createClassicNamespace(app, tracker);
@@ -43,4 +49,17 @@ export default plugin;
 export { IClassicNamespace } from './namespace';
 export { NotebookShim, CellShim } from './notebook';
 export { KernelShim } from './kernel';
+export { CommManagerShim, CommShim } from './comm';
 export { EventsShim } from './events';
+export { SessionShim } from './session';
+export { ContentsShim } from './contents';
+export {
+  ActionHandlerShim,
+  KeyboardManagerShim,
+  ShortcutManagerShim,
+  translateShortcut
+} from './keyboard';
+export { ToolbarShim } from './toolbar';
+export { OutputAreaShim, convertOutputMsg } from './outputarea';
+export { CodeMirrorShim } from './codemirror';
+export { dialog, modal } from './dialog';
