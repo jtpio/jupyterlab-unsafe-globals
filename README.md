@@ -1,7 +1,7 @@
 # jupyterlab_unsafe_globals
 
 [![Github Actions Status](https://github.com/jtpio/jupyterlab-unsafe-globals/workflows/Build/badge.svg)](https://github.com/jtpio/jupyterlab-unsafe-globals/actions/workflows/build.yml)
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jtpio.github.io/jupyterlab-unsafe-globals/lab/index.html?path=unsafe-globals.ipynb)
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jtpio.github.io/jupyterlab-unsafe-globals/notebooks/index.html?path=unsafe-globals.ipynb)
 
 Expose the classic Notebook globals (`Jupyter`, `IPython`) on the window, for JupyterLab and Jupyter Notebook.
 
@@ -19,9 +19,9 @@ Restoring these globals restores the security posture of the classic Notebook: a
 
 You can try the extension directly in your browser with JupyterLite, without installing anything:
 
-[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jtpio.github.io/jupyterlab-unsafe-globals/lab/index.html?path=unsafe-globals.ipynb)
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jtpio.github.io/jupyterlab-unsafe-globals/notebooks/index.html?path=unsafe-globals.ipynb)
 
-The demo notebook uses `%%javascript` cells to exercise the classic API: driving cells, running code on the kernel with the classic callbacks, toolbar buttons, events, shortcuts, and dialogs. The same site also serves the [Jupyter Notebook 7 interface](https://jtpio.github.io/jupyterlab-unsafe-globals/notebooks/index.html?path=unsafe-globals.ipynb).
+The demo notebook uses `%%javascript` cells to exercise the classic API: driving cells, running code on the kernel with the classic callbacks, toolbar buttons, events, shortcuts, and dialogs. The same site also serves the [JupyterLab interface](https://jtpio.github.io/jupyterlab-unsafe-globals/lab/index.html?path=unsafe-globals.ipynb).
 
 The site is deployed to GitHub Pages from the [demo](./demo) folder.
 
