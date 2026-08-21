@@ -1,6 +1,7 @@
 # jupyterlab_unsafe_globals
 
 [![Github Actions Status](https://github.com/jtpio/jupyterlab-unsafe-globals/workflows/Build/badge.svg)](https://github.com/jtpio/jupyterlab-unsafe-globals/actions/workflows/build.yml)
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jtpio.github.io/jupyterlab-unsafe-globals/lab/index.html?path=unsafe-globals.ipynb)
 
 Expose the classic Notebook globals (`Jupyter`, `IPython`) on the window, for JupyterLab and Jupyter Notebook.
 
@@ -13,6 +14,16 @@ This extension restores a subset of those globals as an opt-in compatibility shi
 ## ⚠️ Warning: this is unsafe by design
 
 Restoring these globals restores the security posture of the classic Notebook: any JavaScript running in the page, including code injected from a kernel with `IPython.display.Javascript`, can read, modify, execute, and save the current notebook, and reach the whole application through `Jupyter.app`. Install it only if you understand and accept this. Do not install it by default for other users.
+
+## Try it in your browser
+
+You can try the extension directly in your browser with JupyterLite, without installing anything:
+
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://jtpio.github.io/jupyterlab-unsafe-globals/lab/index.html?path=unsafe-globals.ipynb)
+
+The demo notebook uses `%%javascript` cells to exercise the classic API: driving cells, running code on the kernel with the classic callbacks, toolbar buttons, events, shortcuts, and dialogs. The same site also serves the [Jupyter Notebook 7 interface](https://jtpio.github.io/jupyterlab-unsafe-globals/notebooks/index.html?path=unsafe-globals.ipynb).
+
+The site is deployed to GitHub Pages from the [demo](./demo) folder.
 
 ## Requirements
 

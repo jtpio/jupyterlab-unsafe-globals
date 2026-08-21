@@ -81,3 +81,12 @@ before-build-python = ["jlpm clean:all"]
 
 [tool.check-wheel-contents]
 ignore = ["W002"]
+
+[tool.uv]
+# rebuild the wheel for the demo's path dependency when the version or the
+# prebuilt labextension changes, not only when pyproject.toml changes
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "package.json" },
+    { file = "jupyterlab_unsafe_globals/labextension/**" },
+]
